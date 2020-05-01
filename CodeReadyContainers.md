@@ -1,4 +1,5 @@
-# Set up CodeReady Containers on KVM VM
+# Set up CodeReady Containers (crc) on KVM VM
+This documentation is for installing crc on Fedora Cloud VM. 
 ## Notations
 - `[user@host]$`: command to be run on host
 - `[user@guest]$`: command to be run on guest VM
@@ -61,7 +62,38 @@ api.crc.testing.        0       IN      A       192.168.122.33
 console.apps-crc.testing. 0     IN      A       192.168.122.33
 ```
 ## Set up Port-forwarding for nested VMs
-
+By default, only the host can see the guest VM network. In the case of crc installed on Fedora Cloud guest VM, there is a new nested VM created by crc to run Openshift that can only be seen by Fedora Cloud. To have the host see Openshift network, we need to do Port Forwarding using `iptables` inside Fedora Cloud VM to forward traffic to Openshift. Several common ports include 80 and 443 for application routes and 6443 for API route.
+Given the Openshift VM uses `crc` network (this network is configured when we ran `crc setup` above) with the VM IP `192.168.130.11`.
+On the host/guest (both can see the `crc` network), we can get the info about the crc network with the fixed IP `192.168.130.11` set for the Openshift VM:
+```bash
+[user@host]$ virsh net-dumpxml crc | tee crc_network.xml
+<network>
+  <name>crc</name>
+  <uuid>49eee855-d342-46c3-9ed3-b8d1758814cd</uuid>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='crc' stp='on' delay='0'/>
+  <mac address='52:54:00:fd:be:d0'/>
+  <ip family='ipv4' address='192.168.130.1' prefix='24'>
+    <dhcp>
+      <host mac='52:fd:fc:07:21:82' ip='192.168.130.11'/>
+    </dhcp>
+  </ip>
+</network>
+```
+On Fedora Cloud VM, update `iptables` to forward traffic to the Openshift VM 
+```bash
+[user@guest]$ sudo iptables -I FORWARD -o crc -d 192.168.130.11 -j ACCEPT
+# forward port 80
+[user@guest]$ sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j DNAT --to 192.168.130.11:80
+# forward port 443
+[user@guest]$ sudo iptables -t nat -I PREROUTING -p tcp --dport 443 -j DNAT --to 192.168.130.11:443
+# forward port 6443
+[user@guest]$ sudo iptables -t nat -I PREROUTING -p tcp --dport 6443 -j DNAT --to 192.168.130.11:6443
+```
 ## References
 - [CodeReady Containers wiki](https://code-ready.github.io/crc/)
 
