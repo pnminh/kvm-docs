@@ -15,7 +15,8 @@ On the guest client, make sure virtualization packages are installed. Here is an
 $ sudo dnf group install virtualization
 ```
 Verify that the virtual machine has virtualization correctly set up:
-```$ virt-host-validate
+```bash
+$ virt-host-validate
   QEMU: Checking for hardware virtualization                                 : PASS
   QEMU: Checking if device /dev/kvm exists                                   : PASS
   QEMU: Checking if device /dev/kvm is accessible                            : PASS
