@@ -62,8 +62,13 @@ api.crc.testing.        0       IN      A       192.168.122.33
 console.apps-crc.testing. 0     IN      A       192.168.122.33
 ```
 ## Set up Port-forwarding for nested VMs
-By default, only the host can see the guest VM network. In the case of crc installed on Fedora Cloud guest VM, there is a new nested VM created by crc to run Openshift that can only be seen by Fedora Cloud. To have the host see Openshift network, we need to do Port Forwarding using `iptables` inside Fedora Cloud VM to forward traffic to Openshift. Several common ports include 80 and 443 for application routes and 6443 for API route.
+
+By default, only the host can see the guest VM network. In the case of crc installed on Fedora Cloud guest VM, there is a new nested VM created by crc to run Openshift that can only be seen by Fedora Cloud. 
+
+To have the host see Openshift network, we need to do Port Forwarding using `iptables` inside Fedora Cloud VM to forward traffic to Openshift. Several common ports include 80 and 443 for application routes and 6443 for API route.
+
 Given the Openshift VM uses `crc` network (this network is configured when we ran `crc setup` above) with the VM IP `192.168.130.11`.
+
 On the host/guest (both can see the `crc` network), we can get the info about the crc network with the fixed IP `192.168.130.11` set for the Openshift VM:
 ```bash
 [user@host]$ virsh net-dumpxml crc | tee crc_network.xml
