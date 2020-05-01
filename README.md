@@ -97,7 +97,58 @@ $ virt-install --connect qemu:///system \
 --disk path=fedora_cloud32.iso,device=cdrom
 ```
 ### Set static IP for the new VM
+Get the list of current networks used by KVM
+```bash
+virsh net-list
+ Name              State    Autostart   Persistent
+----------------------------------------------------
+ crc               active   yes         yes
+ default           active   yes         yes
+ docker-machines   active   yes         yes
+```
+Usually the new VM by default will use the `default` network. Back up the default network info in case the configuration goes wrong
+```bash
+$ virsh net-dumpxml default > default_network_bk.xml
+```
+Get the MAC address for the VM
+```bash
+$ virsh dumpxml <VM_name> | grep -i '<mac'
+      <mac address='52:54:00:fc:a5:72'/>
+```
+Then edit the `default` network, append `<host mac='52:54:00:fc:a5:72' name='vm_name' ip='192.168.122.33'/>` at the same level with `<range start='start_ip' end='end_ip'/>`,
+with `mac`: the mac address retrieved above, the `name` can be anything but needs to be unique since all VMs shares this same network, so it's smart to use the VM name, and `ip` is the fixed IP to be used
+```bash
+$ virsh net-edit default
+<network>
+  <name>default</name>
+  <uuid>4699892c-c4d8-4331-a380-02881cb07cba</uuid>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <mac address='52:54:00:49:00:15'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+        <range start='192.168.122.2' end='192.168.122.254'/>
+        <host mac='52:54:00:fc:a5:72' name='fedora_cloud' ip='192.168.122.33'/>
+    </dhcp>
+  </ip>
+</network>
+```
+Save the file and restart the DHCP service
+```bash
+$ virsh net-destroy default
+$ virsh net-start default
+```
+ 
+We then need to shut down the VM
 
+```bash
+$ virsh shutdown <vm_name>
+$ virsh start <vm_name>
+$ ssh mpham@192.168.122.33
+```
+Since we already inserted the ssh public key into the `user-data` file, we should expect to log in to the VM without password prompt.
+ 
 References:
 - [Booting Fedora cloud images with KVM](https://blog.christophersmart.com/2016/06/17/booting-fedora-24-cloud-image-with-kvm/)
 - [Using Cloud Images in KVM](https://www.theurbanpenguin.com/using-cloud-images-in-kvm/)
+- [KVM libvirt assign static guest IP addresses using DHCP on the virtual machine](https://www.cyberciti.biz/faq/linux-kvm-libvirt-dnsmasq-dhcp-static-ip-address-configuration-for-guest-os/)
