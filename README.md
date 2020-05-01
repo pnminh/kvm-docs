@@ -10,7 +10,7 @@ $ sudo dnf group install Virtualization
 ```
 Ubuntu
 ```bash
-sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+$ sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
 ```
 Add current user to `libvirt` and `kvm` groups
 ```bash
@@ -44,7 +44,7 @@ Format specific information:
     refcount bits: 16
 
 # resize image
-qemu-img resize Fedora-Cloud-Base-32-1.6.x86_64.qcow2 50G
+$ qemu-img resize Fedora-Cloud-Base-32-1.6.x86_64.qcow2 50G
 ```
 The cloud image uses `cloud-init` to set things up at boot time such hostname, usernames, passwords/ssh keys, etc. It's similar to ignition file for CoreOS platform. We will set up 2 files for `cloud-init`: `meta-data` and `user-data`
 
@@ -99,7 +99,7 @@ $ virt-install --connect qemu:///system \
 ### Set static IP for the new VM
 Get the list of current networks used by KVM
 ```bash
-virsh net-list
+$ virsh net-list
  Name              State    Autostart   Persistent
 ----------------------------------------------------
  crc               active   yes         yes
