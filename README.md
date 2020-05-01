@@ -149,6 +149,8 @@ $ ssh mpham@192.168.122.33
 Since we already inserted the ssh public key into the `user-data` file, we should expect to log in to the VM without password prompt.
  
 ## References:
+- [Fedora-Installing Virtualization package groups](https://docs.fedoraproject.org/en-US/Fedora/22/html/Virtualization_Getting_Started_Guide/ch06s02.html)
+- [Ubuntu KVM/Installation](https://help.ubuntu.com/community/KVM/Installation)
 - [Booting Fedora cloud images with KVM](https://blog.christophersmart.com/2016/06/17/booting-fedora-24-cloud-image-with-kvm/)
 - [Using Cloud Images in KVM](https://www.theurbanpenguin.com/using-cloud-images-in-kvm/)
 - [KVM libvirt assign static guest IP addresses using DHCP on the virtual machine](https://www.cyberciti.biz/faq/linux-kvm-libvirt-dnsmasq-dhcp-static-ip-address-configuration-for-guest-os/)
