@@ -24,7 +24,40 @@ $ virt-host-validate
   QEMU: Checking if device /dev/net/tun exists                               : PASS
 ```
 
-## Install and start CodeReady Containers with crc
+## Install and start CodeReady Containers (crc)
+Download the latest version of [crc](https://cloud.redhat.com/openshift/install/crc/installer-provisioned)
+```bash
+$ wget https://mirror.openshift.com/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz
+$ tar -xvf crc-linux-amd64.tar.xz
+$ sudo mv crc-linux-1.9.0-amd64/crc /usr/local/bin
+$ crc setup
+$ crc start
+```
+The `crc start` command requires a pull secret downloaded from [Red Hat OpenShift Cluster Manager](https://cloud.redhat.com/openshift/install/crc/installer-provisioned)
 ## Set up host's dnsmasq to resolve guest's OCP wildcard routes
+
+There are 2 routes that OCP exposes: the api route (`api.crc.testing`) that uses the parent domain `.crc.testing`  and the application wildcard route (`*.apps-crc.testing`) which includes the console URL.
+
+From the host, edit the file `/etc/dnsmasq.conf` and add the lines:
+```bash
+# Add domains which you want to force to an IP address here.
+# The example below send any host in double-click.net to a local
+# web-server.
+#address=/double-click.net/127.0.0.1
+address=/.apps-crc.testing/192.168.122.33
+address=/.crc.testing/192.168.122.33
+```
+
+Restart dnsmasq service and run dig to check for dns resolution
+```bash
+$ sudo systemctl restart dnsmasq
+$ dig +noall +answer api.crc.testing
+api.crc.testing.        0       IN      A       192.168.122.33
+$ dig  +noall +answer console.apps-crc.testing
+console.apps-crc.testing. 0     IN      A       192.168.122.33
+```
 ## Set up Port-forwarding for nested VMs
+
 ## References
+- [CodeReady Containers wiki](https://code-ready.github.io/crc/)
+
