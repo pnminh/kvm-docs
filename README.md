@@ -22,7 +22,6 @@ May need to log out for the group add to take effect. We can test by running
 ```bash
 $ groups
 ```
-## Resize VM disk
 
 ## Run Fedora/CentOS cloud image
 Fedora/CentOS cloud is a minumum base image. This post is about installing and configuring [Fedora cloud](https://alt.fedoraproject.org/cloud/).
@@ -150,6 +149,24 @@ $ ssh mpham@192.168.122.33
 ```
 Since we already inserted the ssh public key into the `user-data` file, we should expect to log in to the VM without password prompt.
  
+## Resize VM disk
+First the VM needs to be shut down
+```bash
+$ virsh shutdown fedora_cloud
+```
+Get the path for the backing storage
+```bash
+$ virsh domblklist fedora_cloud 
+ Target   Source
+---------------------------------------------------------------------------------
+ hda      /home/minhpn/kvm/fedora_cloud32/Fedora-Cloud-Base-32-1.6.x86_64.qcow2
+ hdb      /home/minhpn/kvm/fedora_cloud32/fedora_cloud32.iso
+```
+Resize the disk
+```bash
+$ sudo qemu-img resize /home/minhpn/kvm/fedora_cloud32/Fedora-Cloud-Base-32-1.6.x86_64.qcow2 +10G
+```
+Make sure there is `no snapshot` taken for the VM, otherwise we cannot resize the disk.
 ## References:
 - [Fedora-Installing Virtualization package groups](https://docs.fedoraproject.org/en-US/Fedora/22/html/Virtualization_Getting_Started_Guide/ch06s02.html)
 - [Ubuntu KVM/Installation](https://help.ubuntu.com/community/KVM/Installation)
