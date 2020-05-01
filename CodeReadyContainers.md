@@ -42,29 +42,6 @@ Download the latest version of [crc](https://cloud.redhat.com/openshift/install/
 [user@guest]$ crc start
 ```
 The `crc start` command requires a pull secret downloaded from [Red Hat OpenShift Cluster Manager](https://cloud.redhat.com/openshift/install/crc/installer-provisioned)
-## Set up host's dnsmasq to resolve guest's OCP wildcard routes
-
-There are 2 routes that OCP exposes: the api route (`api.crc.testing`) that uses the parent domain `.crc.testing`  and the application wildcard route (`*.apps-crc.testing`) which includes the console URL.
-
-From the host, edit the file `/etc/dnsmasq.conf` and add the lines:
-```bash
-[user@host]$ sudo vi /et/dnsmasq.conf
-# Add domains which you want to force to an IP address here.
-# The example below send any host in double-click.net to a local
-# web-server.
-#address=/double-click.net/127.0.0.1
-address=/.apps-crc.testing/192.168.122.33
-address=/.crc.testing/192.168.122.33
-```
-
-Restart dnsmasq service and run dig to check for dns resolution
-```bash
-[user@host]$ sudo systemctl restart dnsmasq
-[user@host]$ dig +noall +answer api.crc.testing
-api.crc.testing.        0       IN      A       192.168.122.33
-[user@host]$ dig  +noall +answer console.apps-crc.testing
-console.apps-crc.testing. 0     IN      A       192.168.122.33
-```
 ## Set up Port-forwarding for nested VMs
 
 By default, only the host can see the guest VM network. In the case of crc installed on Fedora Cloud guest VM, there is a new nested VM created by crc to run Openshift that can only be seen by Fedora Cloud.   
@@ -103,6 +80,36 @@ On Fedora Cloud VM, update `iptables` to forward traffic to the Openshift VM
 # forward port 6443
 [user@guest]$ sudo iptables -t nat -I PREROUTING -p tcp --dport 6443 -j DNAT --to 192.168.130.11:6443
 ```
+
+## Set up host's dnsmasq to resolve guest's OCP wildcard routes
+
+There are 2 routes that OCP exposes: the api route (`api.crc.testing`) that uses the parent domain `.crc.testing`  and the application wildcard route (`*.apps-crc.testing`) which includes the console URL.
+
+From the host, edit the file `/etc/dnsmasq.conf` and add the lines with the IP set to the Fedora Cloud VM IP, which in place with forward the traffic to crc VM:
+```bash
+[user@host]$ sudo vi /et/dnsmasq.conf
+# Add domains which you want to force to an IP address here.
+# The example below send any host in double-click.net to a local
+# web-server.
+#address=/double-click.net/127.0.0.1
+address=/.apps-crc.testing/192.168.122.33
+address=/.crc.testing/192.168.122.33
+```
+The above configurations can also be observed with querying the crc dnsmasq config file on Fedora Cloud guest VM, except the IP is of the crc VM:
+```bash
+[user@guest]$ cat /etc/NetworkManager/dnsmasq.d/crc.conf
+server=/apps-crc.testing/192.168.130.11
+server=/crc.testing/192.168.130.11
+```
+Restart dnsmasq service and run dig to check for dns resolution
+```bash
+[user@host]$ sudo systemctl restart dnsmasq
+[user@host]$ dig +noall +answer api.crc.testing
+api.crc.testing.        0       IN      A       192.168.122.33
+[user@host]$ dig  +noall +answer console.apps-crc.testing
+console.apps-crc.testing. 0     IN      A       192.168.122.33
+```
+
 ## References
 - [CodeReady Containers wiki](https://code-ready.github.io/crc/)
 - [KVM/libvirt: Forward Ports to guests with Iptables](https://aboullaite.me/kvm-qemo-forward-ports-with-iptables/)
