@@ -167,6 +167,10 @@ Resize the disk
 $ sudo qemu-img resize /home/minhpn/kvm/fedora_cloud32/Fedora-Cloud-Base-32-1.6.x86_64.qcow2 +10G
 ```
 Make sure there is `no snapshot` taken for the VM, otherwise we cannot resize the disk.
+## KVM vs QEMU vs Libvirt
+- QEMU: Hypervisor/emulator, working by a special 'recompiler' that transforms binary code written for a given processor into another one (e.g. ARM in an x86 PC). QEMU also emulates peripheral components.
+- KVM: Linux kernel module, accelerating agent that optimizes QEMU hypervisor on different hardware achitectures. Working together with QEMU with hardware virtualiztion enabled, KVM takes care of CPU and memory, and QUEMU does that for peripherals.
+- Libvirt: Virtualization library that provides API library, a `libvirtd` deamon, and `virsh` CLI client. 
 ## References:
 - [Fedora-Installing Virtualization package groups](https://docs.fedoraproject.org/en-US/Fedora/22/html/Virtualization_Getting_Started_Guide/ch06s02.html)
 - [Ubuntu KVM/Installation](https://help.ubuntu.com/community/KVM/Installation)
@@ -174,3 +178,6 @@ Make sure there is `no snapshot` taken for the VM, otherwise we cannot resize th
 - [Using Cloud Images in KVM](https://www.theurbanpenguin.com/using-cloud-images-in-kvm/)
 - [KVM libvirt assign static guest IP addresses using DHCP on the virtual machine](https://www.cyberciti.biz/faq/linux-kvm-libvirt-dnsmasq-dhcp-static-ip-address-configuration-for-guest-os/)
 - [How To extend/increase KVM Virtual Machine (VM) disk size](https://computingforgeeks.com/how-to-extend-increase-kvm-virtual-machine-disk-size/)
+- [KVM vs QEMU vs Libvirt](https://www.thegeekyway.com/kvm-vs-qemu-vs-libvirt/)
+- [Difference between KVM and QEMU](https://serverfault.com/questions/208693/difference-between-kvm-and-qemu)
+- [What is the difference and relationship between kvm, virt-manager, qemu and libvirt?](https://superuser.com/questions/1490188/what-is-the-difference-and-relationship-between-kvm-virt-manager-qemu-and-libv)
