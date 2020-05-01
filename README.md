@@ -91,7 +91,10 @@ $ genisoimage -output fedora_cloud32.iso -volid cidata -joliet -rock user-data m
 ```
 We then can create the VM from the 2 files: `Fedora-Cloud-Base-32-1.6.x86_64.qcow2` and `fedora_cloud32.iso`
 ```bash
-$ virt-install --connect qemu:///system          -n fedora_cloud          -r 8192 --vcpus=4  -w network=default          --import          --disk path=./Fedora-Cloud-Base-32-1.6.x86_64.qcow2          --disk path=fedora_cloud32.iso,device=cdrom
+$ virt-install --connect qemu:///system \
+-n fedora_cloud -r 8192 --vcpus=4 -w network=default \
+--import --disk path=./Fedora-Cloud-Base-32-1.6.x86_64.qcow2 \
+--disk path=fedora_cloud32.iso,device=cdrom
 ```
 ### Set static IP for the new VM
 
