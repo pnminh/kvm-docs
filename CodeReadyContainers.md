@@ -3,6 +3,10 @@ This documentation is for installing crc on Fedora Cloud VM.
 ## Notations
 - `[user@host]$`: command to be run on host
 - `[user@guest]$`: command to be run on guest VM
+## Topology
+- Host IP: 192.168.1.10
+- Fedora Cloud IP: 192.168.122.33
+- crc nested VM: 192.168.130.11
 ## Host Pass-through (Nested) Virtualization
 Check if nested virtualization is supported (should be for modern hardware)
 ```bash
