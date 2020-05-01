@@ -18,4 +18,7 @@ $ sudo adduser `id -un` libvirtd
 $ sudo adduser `id -un` libvirt
 $ sudo adduser `id -un` kvm
 ```
-May need to log out for the group add to take effect. We can test by running `$ groups`
+May need to log out for the group add to take effect. We can test by running 
+```bash
+$ groups
+```
