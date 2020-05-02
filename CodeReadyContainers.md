@@ -80,6 +80,13 @@ On Fedora Cloud VM, update `iptables` to forward traffic to the Openshift VM
 # forward port 6443
 [user@guest]$ sudo iptables -t nat -I PREROUTING -p tcp --dport 6443 -j DNAT --to 192.168.130.11:6443
 ```
+To persist the `iptables` rules, we would need to install iptables-services. Also `iptables` may conflict with `firewalld` so better to disable `firewalld` before running iptables
+```bash
+[user@guest]$ sudo systemctl disable firewalld
+[user@guest]$ sudo systemctl disable firewalld
+[user@guest]$ sudo systemctl enable iptables
+[user@guest]$ sudo service iptables save
+```
 
 ## Set up host's dnsmasq to resolve guest's OCP wildcard routes
 
@@ -113,3 +120,4 @@ console.apps-crc.testing. 0     IN      A       192.168.122.33
 ## References
 - [CodeReady Containers wiki](https://code-ready.github.io/crc/)
 - [KVM/libvirt: Forward Ports to guests with Iptables](https://aboullaite.me/kvm-qemo-forward-ports-with-iptables/)
+- [Centos 7 save iptables settings](https://serverfault.com/questions/626521/centos-7-save-iptables-settings)
