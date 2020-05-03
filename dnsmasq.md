@@ -65,8 +65,30 @@ $ sudo systemctl enable resolvconf
 $ sudo systemctl start resolvconf
 ```
 ## Set up wildcard domains
+If we want to add a whole subdmain dns resolution (wildcard domain), create a new config file in `/etc/dnsmasq.d/` or update `/etc/dnsmasq.conf`
+```bash
+$ cat << EOF | sudo tee /etc/dnsmasq.d/crc.conf
+address=/apps-crc.testing/192.168.122.44
+address=/crc.testing/192.168.122.44
+EOF
+```
+The `crc.conf` created above will resolve all domains ending with `apps-crc.testing` and `crc.testing` with the IP `192.168.122.44`. Restart `dnsmasq` and test the dns resolution
+```bash
+$ sudo systemctl restart dnsmasq
+$ dig +noall +answer crc.testing
+crc.testing.            0       IN      A       192.168.122.44
+$ dig +noall +answer api.crc.testing
+api.crc.testing.        0       IN      A       192.168.122.44
+$ dig +noall +answer apps-crc.testing
+apps-crc.testing.       0       IN      A       192.168.122.44
+$ dig +noall +answer console.apps-crc.testing
+console.apps-crc.testing. 0     IN      A       192.168.122.44
+```
+
 # ToDo: dnsmasq as DHCP server
 ## References
 - [How to avoid conflicts between dnsmasq and systemd-resolved?](https://unix.stackexchange.com/questions/304050/how-to-avoid-conflicts-between-dnsmasq-and-systemd-resolved)
 - [How to disable systemd-resolved and resolve DNS with dnsmasq?](https://askubuntu.com/questions/898605/how-to-disable-systemd-resolved-and-resolve-dns-with-dnsmasq)
 - [How do I set my DNS when resolv.conf is being overwritten?](https://unix.stackexchange.com/questions/128220/how-do-i-set-my-dns-when-resolv-conf-is-being-overwritten)
+- [Configure DNS Wildcard with Dnsmasq Service](https://qiita.com/bmj0114/items/9c24d863bcab1a634503)
+- [Wildcard subdomains with dnsmasq](https://stackoverflow.com/questions/22313142/wildcard-subdomains-with-dnsmasq)

@@ -121,3 +121,5 @@ console.apps-crc.testing. 0     IN      A       192.168.122.33
 - [CodeReady Containers wiki](https://code-ready.github.io/crc/)
 - [KVM/libvirt: Forward Ports to guests with Iptables](https://aboullaite.me/kvm-qemo-forward-ports-with-iptables/)
 - [Centos 7 save iptables settings](https://serverfault.com/questions/626521/centos-7-save-iptables-settings)
+- [Configure DNS Wildcard with Dnsmasq Service](https://qiita.com/bmj0114/items/9c24d863bcab1a634503)
+- [Wildcard subdomains with dnsmasq](https://stackoverflow.com/questions/22313142/wildcard-subdomains-with-dnsmasq)
