@@ -47,7 +47,7 @@ Link `/etc/resolv.conf` to `/run/resolvconf/resolv.conf` which is the the comput
 ```bash
 $ sudo ln -s /run/resolvconf/resolv.conf /etc/resolv.conf
 ```
-Update `resolveconf` with the new data
+Update `resolvconf` with the new data
 ```bash
 $ sudo resolvconf -u
 $ cat /etc/resolv.conf 
