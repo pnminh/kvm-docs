@@ -85,7 +85,8 @@ $ dig +noall +answer console.apps-crc.testing
 console.apps-crc.testing. 0     IN      A       192.168.122.44
 ```
 ## FAQs
-1. `address` vs `server` in config file
+1. `address` vs `server` in config file   
+   
    For example
     ```bash
     address=/example.com/192.168.1.10
@@ -93,6 +94,14 @@ console.apps-crc.testing. 0     IN      A       192.168.122.44
     ```
    - `address`: example.com will be resolved to 192.168.1.10. In this case dnsmasq is used as a dns server
    - `server`: any dns lookup with `example.com` as parent domain will be sent to the dns server `192.168.1.10`. The dns server can return the same or different IP for `example.com`, e.g. `192.168.1.11`.
+2. Set up logging in config file   
+   
+   For example,
+   ```bash
+    log-queries
+    log-facility=/var/log/dnsmasq.log
+   ```
+   will add logs to `/var/log/dnsmasq.log`
 # ToDo: dnsmasq as DHCP server
 ## References
 - [How to avoid conflicts between dnsmasq and systemd-resolved?](https://unix.stackexchange.com/questions/304050/how-to-avoid-conflicts-between-dnsmasq-and-systemd-resolved)
