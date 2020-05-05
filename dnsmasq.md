@@ -88,6 +88,23 @@ $ cat /etc/NetworkManager/dnsmasq.d/logging.conf
 log-queries
 log-facility=/var/log/dnsmasq.log
 ```
+### Query all upstream servers
+We can have dnsmasq query all upstream servers concurrently and return the reply from the server with the fastest response.
+```bash
+$ cat /etc/NetworkManager/dnsmasq.d/all_servers.conf 
+all-servers
+```
+### Enable caching
+By default Network Manager's dnsmasq does not have caching enabled. We can see the cache option `--cache-size=0` with the `ps` command. 
+```bash
+$ ps aux|grep dnsmasq
+nobody   1331411  0.0  0.0  17856  3608 ?        S    18:50   0:00 /usr/sbin/dnsmasq --no-resolv --keep-in-foreground --no-hosts --bind-interfaces --pid-file=/run/NetworkManager/dnsmasq.pid --listen-address=127.0.1.1 --cache-size=0 --clear-on-reload --conf-file=/dev/null --proxy-dnssec --enable-dbus=org.freedesktop.NetworkManager.dnsmasq --conf-dir=/etc/NetworkManager/dnsmasq.d
+```
+We can override this option by adding a configuration file with the flag `cache-size`
+```bash
+$ cat /etc/NetworkManager/dnsmasq.d/cache.conf 
+cache-size=1000
+```
 # Standalone dnsmasq as local DNS server
 ```
 Note*: This doesn't play well with Network Manager OpenVPN plugin as the DNS list is not updated as in the case of using Network Manager's dnsmasq
@@ -202,3 +219,6 @@ console.apps-crc.testing. 0     IN      A       192.168.122.44
 - [How do I set my DNS when resolv.conf is being overwritten?](https://unix.stackexchange.com/questions/128220/how-do-i-set-my-dns-when-resolv-conf-is-being-overwritten)
 - [Configure DNS Wildcard with Dnsmasq Service](https://qiita.com/bmj0114/items/9c24d863bcab1a634503)
 - [Wildcard subdomains with dnsmasq](https://stackoverflow.com/questions/22313142/wildcard-subdomains-with-dnsmasq)
+- [Option all-servers for multiple DNS servers to enable minimizing the latency](https://discourse.pi-hole.net/t/option-all-servers-for-multiple-dns-servers-to-enable-minimizing-the-latency/5930)
+- [Using the NetworkManager’s DNSMasq plugin](https://fedoramagazine.org/using-the-networkmanagers-dnsmasq-plugin/)
+- [Using dnsmasq with NetworkManager](https://superuser.com/questions/681993/using-dnsmasq-with-networkmanager)
