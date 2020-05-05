@@ -1,5 +1,6 @@
 # Use dnsmasq as part of Network Manager
-As `Network Manager` is integrated heavily to Linux, it does support very well different networking scenarios, including adding different DNS servers when a VPN connection is established 
+As `Network Manager` is integrated heavily to Linux, it does support very well different networking scenarios, including adding different DNS servers when a VPN connection is established.   
+ 
 For example, here is the log (full log is in `network-manager-openvpn.log`) from using `journalctl` when an Open VPN connection is established using `network-manager-openvpn` plugin
 ```bash
 $ journalctl -u NetworkManager -f|grep -i vpn
