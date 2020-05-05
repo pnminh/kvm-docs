@@ -89,6 +89,9 @@ log-queries
 log-facility=/var/log/dnsmasq.log
 ```
 # Standalone dnsmasq as local DNS server
+```
+Note*: This doesn't play well with Network Manager OpenVPN plugin as the DNS list is not updated as in the case of using Network Manager's dnsmasq
+```
 ## Set up standalone dnsmasq as the default local DNS server
 First, install `dnsmasq`
 ```bash
