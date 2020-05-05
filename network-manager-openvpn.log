@@ -1,0 +1,38 @@
+journalctl -u NetworkManager -f|grep -i vpn
+May 04 18:09:21 mpham NetworkManager[1283380]: <info>  [1588633761.5914] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",0]: Started the VPN service, PID 1291544
+May 04 18:09:21 mpham NetworkManager[1283380]: <info>  [1588633761.6011] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",0]: Saw the service appear; activating connection
+May 04 18:09:41 mpham NetworkManager[1283380]: <info>  [1588633781.0624] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",0]: VPN plugin: state changed: starting (3)
+May 04 18:09:41 mpham NetworkManager[1283380]: <info>  [1588633781.0626] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",0]: VPN connection: (ConnectInteractive) reply received
+May 04 18:09:41 mpham nm-openvpn[1291869]: OpenVPN 2.4.7 x86_64-pc-linux-gnu [SSL (OpenSSL)] [LZO] [LZ4] [EPOLL] [PKCS11] [MH/PKTINFO] [AEAD] built on Sep  5 2019
+May 04 18:09:41 mpham nm-openvpn[1291869]: library versions: OpenSSL 1.1.1f  31 Mar 2020, LZO 2.10
+May 04 18:09:41 mpham nm-openvpn[1291869]: NOTE: the current --script-security setting may allow this configuration to call user-defined scripts
+May 04 18:09:41 mpham nm-openvpn[1291869]: WARNING: normally if you use --mssfix and/or --fragment, you should also set --tun-mtu 1500 (currently it is 1360)
+May 04 18:09:41 mpham nm-openvpn[1291869]: TCP/UDP: Preserving recently used remote address: [AF_INET]66.187.232.64:443
+May 04 18:09:41 mpham nm-openvpn[1291869]: UDP link local: (not bound)
+May 04 18:09:41 mpham nm-openvpn[1291869]: UDP link remote: [AF_INET]66.187.232.64:443
+May 04 18:09:41 mpham nm-openvpn[1291869]: NOTE: chroot will be delayed because of --client, --pull, or --up-delay
+May 04 18:09:41 mpham nm-openvpn[1291869]: NOTE: UID/GID downgrade will be delayed because of --client, --pull, or --up-delay
+May 04 18:09:41 mpham nm-openvpn[1291869]: [ovpn.redhat.com] Peer Connection Initiated with [AF_INET]66.187.232.64:443
+May 04 18:09:47 mpham nm-openvpn[1291869]: TUN/TAP device tun0 opened
+May 04 18:09:47 mpham nm-openvpn[1291869]: /usr/lib/NetworkManager/nm-openvpn-service-openvpn-helper --debug 0 1291544 --bus-name org.freedesktop.NetworkManager.openvpn.Connection_10 --tun -- tun0 1360 1412 10.10.112.197 255.255.240.0 init
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7567] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",0]: VPN connection: (IP Config Get) reply received.
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7581] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: VPN connection: (IP4 Config Get) reply received
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7588] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data: VPN Gateway: 66.187.232.64
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7588] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data: Tunnel Device: "tun0"
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7588] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data: IPv4 configuration:
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal Gateway: 10.10.112.1
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal Address: 10.10.112.197
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal Prefix: 20
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal Point-to-Point Address: 10.10.112.197
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Static Route: 10.0.0.0/8   Next Hop: 10.10.112.1
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Static Route: 10.10.112.0/20   Next Hop: 0.0.0.0
+May 04 18:09:47 mpham nm-openvpn[1291869]: chroot to '/var/lib/openvpn/chroot' and cd to '/' succeeded
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal DNS: 10.11.5.19
+May 04 18:09:47 mpham nm-openvpn[1291869]: GID set to nm-openvpn
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   Internal DNS: 10.5.30.160
+May 04 18:09:47 mpham nm-openvpn[1291869]: UID set to nm-openvpn
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7589] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data:   DNS Domain: 'redhat.com'
+May 04 18:09:47 mpham nm-openvpn[1291869]: Initialization Sequence Completed
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7590] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: Data: No IPv6 configuration
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7590] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: VPN plugin: state changed: started (4)
+May 04 18:09:47 mpham NetworkManager[1283380]: <info>  [1588633787.7620] vpn-connection[0x55ded3b2c170,f281b867-85e1-4979-8adf-ad9fac216a7c,"Raleigh (RDU2)",30:(tun0)]: VPN connection: (IP Config Get) complete
