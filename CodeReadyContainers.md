@@ -116,7 +116,31 @@ api.crc.testing.        0       IN      A       192.168.122.33
 [user@host]$ dig  +noall +answer console.apps-crc.testing
 console.apps-crc.testing. 0     IN      A       192.168.122.33
 ```
+## SSH to crc VM
+Look into `crc.log` file to get the ssh key that crc installation used to ssh to crc VM. We can see there were 2 keys mentioned from the logs. I tried both but only the `~/.crc/machines/crc/id_rsa` worked for me.
+```bash
+[user@guest]$ cat ~/.crc/crc.log |grep ssh
+&{[-F /dev/null -o ConnectionAttempts=3 -o ConnectTimeout=10 -o ControlMaster=no -o ControlPath=none -o LogLevel=quiet -o PasswordAuthentication=no -o ServerA
+liveInterval=60 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.130.11 -o IdentitiesOnly=yes -i /home/mpham/.crc/cache/crc_libvirt_4.
+3.10/id_rsa_crc -p 22] /usr/bin/ssh <nil>}                                                                                                                    
+&{[-F /dev/null -o ConnectionAttempts=3 -o ConnectTimeout=10 -o ControlMaster=no -o ControlPath=none -o LogLevel=quiet -o PasswordAuthentication=no -o ServerA
+liveInterval=60 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.130.11 -o IdentitiesOnly=yes -i /home/mpham/.crc/machines/crc/id_rsa 
+-p 22] /usr/bin/ssh <nil>}
+```
+We then can also log in to crc VM using user`core`
+```bash
+[user@guest]$ ssh -i ~/.crc/machines/crc/id_rsa core@$(crc ip)
+Red Hat Enterprise Linux CoreOS 43.81.202003310153.0
+  Part of OpenShift 4.3, RHCOS is a Kubernetes native operating system
+  managed by the Machine Config Operator (`clusteroperator/machine-config`).
 
+WARNING: Direct SSH access to machines is not recommended; instead,
+make configuration changes via `machineconfig` objects:
+  https://docs.openshift.com/container-platform/4.3/architecture/architecture-rhcos.html
+
+---
+Last login: Wed May  6 02:35:02 2020 from 192.168.130.1
+```
 ## References
 - [CodeReady Containers wiki](https://code-ready.github.io/crc/)
 - [KVM/libvirt: Forward Ports to guests with Iptables](https://aboullaite.me/kvm-qemo-forward-ports-with-iptables/)
