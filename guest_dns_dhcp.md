@@ -1,6 +1,6 @@
 # KVM: set up guest as DNS, DHCP, TFTP servers
-By default `libvirt` daemon uses `dnsmasq` on host machine to provide DNS and DHCP services to guests. One example is the `default`network.
-We can set up a dedicated guest VM to serve these services instead. We can then extend this guest VM to serve other services like PXE, FTP, etc.
+By default `libvirt` daemon uses `dnsmasq` on host machine to provide DNS and DHCP services to guests. One example is the `default`network.   
+We can set up a dedicated guest VM to serve these services instead. We can then extend this guest VM to serve other services like PXE, FTP, etc.   
 In this doc, we will use dnsmasq to provide DNS, DHCP, and TFTP traffic.
 ## Network diagram
 ![Network Diagram](media/dns_dhcp_pxe.png "Network Diagram")
