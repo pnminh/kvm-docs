@@ -1,0 +1,8 @@
+<network>
+  <name>isolated-dhcp</name>
+  <uuid>34c07436-c91c-451a-9fed-06417ddd1adc</uuid>
+  <bridge name="virbr5" stp="on" delay="0"/>
+  <mac address="52:54:00:90:25:bb"/>
+  <ip address="10.120.121.1" netmask="255.255.255.0">
+  </ip>
+</network>
