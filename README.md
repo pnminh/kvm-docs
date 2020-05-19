@@ -164,8 +164,30 @@ $ virsh domblklist fedora_cloud
 ```
 Resize the disk
 ```bash
-$ sudo qemu-img resize /home/minhpn/kvm/fedora_cloud32/Fedora-Cloud-Base-32-1.6.x86_64.qcow2 +10G
+$ sudo qemu-img resize /home/minhpn/kvm/fedora_cloud32/Fedora-Cloud-Base-32-1.6.x86_64.qcow2 10G
 ```
+The disk is resize, but the partitions on the VM are not adjusted yet. We need to start the VM to resize the partitions.
+```bash
+$ virsh start fedora_cloud
+$ ssh user@fedora_cloud
+user@fedora_cloud$ lsblk
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sr0     11:0    1 1024M  0 rom  
+vda    252:0    0   10G  0 disk 
+└─vda1 252:1    0    4G  0 part /
+```
+In this example we will extend vda1 partition to occupy all the disk space, and then resize the filesystem to take all the partition space.
+```bash
+user@fedora_cloud$ sudo growpart /dev/vda 1
+CHANGED: partition=1 start=2048 old: size=8386560 end=8388608 new: size=20969439 end=20971487
+user@fedora_cloud$ lsblk 
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sr0     11:0    1 1024M  0 rom  
+vda    252:0    0   10G  0 disk 
+└─vda1 252:1    0   10G  0 part /
+user@fedora_cloud$ sudo resize2fs /dev/vda1
+```
+
 Make sure there is `no snapshot` taken for the VM, otherwise we cannot resize the disk.
 ## KVM vs QEMU vs Libvirt
 - QEMU: Hypervisor/emulator, working by a special 'recompiler' that transforms binary code written for a given processor into another one (e.g. ARM in an x86 PC). QEMU also emulates peripheral components.
@@ -181,3 +203,5 @@ Make sure there is `no snapshot` taken for the VM, otherwise we cannot resize th
 - [KVM vs QEMU vs Libvirt](https://www.thegeekyway.com/kvm-vs-qemu-vs-libvirt/)
 - [Difference between KVM and QEMU](https://serverfault.com/questions/208693/difference-between-kvm-and-qemu)
 - [What is the difference and relationship between kvm, virt-manager, qemu and libvirt?](https://superuser.com/questions/1490188/what-is-the-difference-and-relationship-between-kvm-virt-manager-qemu-and-libv)
+- [How To extend/increase KVM Virtual Machine (VM) disk size](https://computingforgeeks.com/how-to-extend-increase-kvm-virtual-machine-disk-size/)
+- [How To resize an ext2/3/4 and XFS root partition without LVM](https://computingforgeeks.com/resize-ext-and-xfs-root-partition-without-lvm/)
