@@ -287,9 +287,44 @@ The `virt-install` will run a `virt-viewer` session for the installation in grap
 ```
 Note that the command above cannot be executed in a text-only environment. A fully-virtualized (--hvm) guest can only be installed in a text-only environment if the --location and --extra-args "console=console_type" are provided instead of the --graphics spice parameter.
 ```
+After the installation we can ssh to the client VM
+```bash
+$ ssh mpham@10.120.121.99
+$ ping services.example.com
+PING services.example.com (10.120.121.250) 56(84) bytes of data.
+64 bytes from dhcp (10.120.121.250): icmp_seq=1 ttl=64 time=0.593 ms
+...
+$ ping client.example.com
+PING client.example.com (10.120.121.99) 56(84) bytes of data.
+64 bytes from client (10.120.121.99): icmp_seq=1 ttl=64 time=0.040 ms
+...
+$ ping google.com
+PING google.com (172.217.4.78) 56(84) bytes of data.
+From 10.120.121.1 (10.120.121.1) icmp_seq=1 Destination Port Unreachable
+...
+```
+From the output above, we see that the client cannot connect to any servers outside of our `isolated-dhcp` network. We would need to forward all traffic from our gateway at `10.120.121.250` on VM1 `eth1` to VM1 `eth0`.
 ## Set up NAT gateway for internet access
-
-
+On VM1 machine, we will use `eth0` as NAT gateway for all outside traffic coming from `isolated-dhcp` with gateway on `eth1`.
+```bash
+# make sure ip forwarding is enabled
+$ sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+# install iptables-services to persist iptables rules
+$ sudo dnf install -y iptables-services
+$ sudo systemctl enable iptables
+$ sudo iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+$ sudo iptables -A FORWARD -i eth0 -o eth1 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+$ sudo service iptables save
+```
+Now, go back to VM2 and ping any server on the internet. We should expect to receive the responses
+```bash
+$ ping google.com
+PING google.com (172.217.4.78) 56(84) bytes of data.
+64 bytes from lga15s47-in-f78.1e100.net (172.217.4.78): icmp_seq=1 ttl=54 time=76.9 ms
+...
+```
 
 ## References
 - [VirtualNetworking](https://wiki.libvirt.org/page/VirtualNetworking)
@@ -305,3 +340,4 @@ Note that the command above cannot be executed in a text-only environment. A ful
 - [How To Set Up vsftpd for Anonymous Downloads on Ubuntu 16.04](https://www.digitalocean.com/community/tutorials/how-to-set-up-vsftpd-for-anonymous-downloads-on-ubuntu-16-04)
 - [“Permission denied” trying to get a file using TFTP](https://unix.stackexchange.com/questions/31809/permission-denied-trying-to-get-a-file-using-tftp#comment43218_31809)
 - [Installing guest virtual machines with PXE](https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/Virtualization_Deployment_and_Administration_Guide/sect-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Guest_Installation-Installing_guests_with_PXE.html)
+- [iptables forwarding between two interface](https://serverfault.com/questions/431593/iptables-forwarding-between-two-interface)
