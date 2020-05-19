@@ -122,9 +122,110 @@ $ cat /etc/resolv.conf
 search example.com
 nameserver 10.120.121.250
 ```
+If we try resolving a domain now using a tool like `dig` or `nslookup` we will get lookup timeout due to no dns server running on `10.120.121.250`.   
 
+Install `dnsmasq` on VM1 and configure it to bind dns/dhcp/gateway/tftp services to the `isolated-dhcp` network.
+**Note: since dns service is not yet available, we may need to manually add nameserver, e.g 8.8.8.8 to `/etc/resolved.cfg` to install packages. This entry will be deleted once we restart `NetworkManager`. 
+
+```bash
+$ echo "nameserver 8.8.8.8"|sudo tee /etc/resolv.conf  
+$ sudo dnf install -y dnsmasq
+$ cat <<EOF | sudo tee /etc/dnsmasq.d/isolated-dhcp.conf
+# Set this to listen on the internal interface
+listen-address=::1,127.0.0.1,10.120.121.250
+interface=eth1
+
+# This is the domain the cluster will be on
+# expand-hosts addsthe domain to host entries in /etc/hosts
+expand-hosts
+domain=example.com
+
+# The 'upstream' libvirt dns server running on default network
+server=192.168.122.1
+
+# Add local-only domains here, queries in these domains are answered
+# from /etc/hosts or DHCP only.
+local=/example.com/
+
+# SET UP DHCP
+dhcp-range=10.120.121.5,10.120.121.250,12h
+dhcp-leasefile=/var/lib/dnsmasq/dnsmasq.leases
+# dhcp option 3 is the router
+dhcp-option=3,10.120.121.250
+# dhcp option 6 is the DNS server
+dhcp-option=6,10.120.121.250
+# dhcp option 28 is the broadcast address
+dhcp-option=28,10.120.121.255
+
+# The set is required for tagging. Set a mac address with a specific tag
+# this is for dhcp server which provide other services. MAC is for veth1
+dhcp-mac=set:services,52:54:00:4b:73:5f
+#this is for pxe client (VM2) machine
+dhcp-mac=set:pxeclient,52:54:00:82:ba:38
+
+# Match the tag with a specific hostname
+# dhcp option 12 is the hostname to hand out to clients
+dhcp-option=tag:pxe_client,12,pxeclient.example.com
+dhcp-option=tag:services,12,services.example.com
+
+# hand out IP addresses
+dhcp-host=52:54:00:4b:73:5f,10.120.121.250
+dhcp-host=52:54:00:82:ba:38,10.120.121.99
+
+# Add A, AAAA and PTR records to the DNS
+#host-record=52:54:00:66:16:2a,10.120.121.250,services.lab-cluster.okd4.lab
+#host-record=52:54:00:82:ba:38,10.120.121.99,iptables.lab-cluster.okd4.lab
+
+# PXE
+#PXELINUX is a Syslinux derivative, for booting 
+# from a network server using a network ROM conforming to the Intel PXE
+#pxelinux.0: BIOS-based PXE clients
+#grubx64.efi: UEFI-based PXE clients
+# specify tftp server name (pxeserver) and server address (10.120.121.250)
+#dhcp-boot=pxelinux.0,pxeserver,10.120.121.250
+#if enable-tftp is set, no need to provide other server info
+dhcp-boot=pxelinux.0
+
+#PXE client will see the prompt 
+pxe-prompt="Press F8 for menu.", 60
+#use pxelinux for x86PC platform
+pxe-service=x86PC, "Install CentOS 7 from network server 10.120.121.250", pxelinux
+#enable tftp server with dnsmasq
+enable-tftp
+#the location for all netbooting files.
+tftp-root=/var/lib/tftpboot
+EOF
+```
 ## Set up TFTP
+Since PXELINUX is a Syslinux derivative, which is a lightweight master boot record boot loaders for starting up IBM PC compatible computers with the Linux kernel over the PXE channel. We will use `syslinux` bootloader package for our pxelinux setup. Since our pxe root is at `/var/lib/tftpboot`, copy all syslinux boot files into this location.
+```bash
+$ sudo dnf install -y syslinux
+$ ls /usr/share/syslinux
+altmbr.bin    cpuidtest.c32  gfxboot.c32   ifplop.c32          ldlinux.c32   mboot.c32     prdhcp.c32      syslinux.com
+...
+$ sudo mkdir -p /var/lib/tftpboot
+$ sudo cp -r /usr/share/syslinux/* /var/lib/tftpboot
+```
+The PXE Server maps the configuration boot file to a client machine from a group of specific files in <tftp_root>/pxelinux.cfg folder(read [pxelinux configuration](https://wiki.syslinux.org/wiki/index.php?title=PXELINUX#Configuration)). The order of the mapping search is client `UUID > MAC > IP address > default file`. In this example we will use a default file to boot our client.
+```bash
+$ sudo mkdir -p /var/lib/tftpboot/pxelinux.cfg
+$ cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux.cfg/default
+default menu.c32
+prompt 0
+timeout 300
+ONTIMEOUT local
 
+menu title ########## PXE Boot Menu ##########
+
+label 1
+menu label ^1) Install CentOS 7 x64 with Local Repo
+kernel centos7/vmlinuz
+append initrd=centos7/initrd.img method=ftp://services.example.com/pub devfs=nomount
+
+label 2
+menu label ^4) Boot from local drive
+EOF
+```
 ## Set up NAT gateway for internet access
 
 ## Set up TFTP client
@@ -137,3 +238,6 @@ nameserver 10.120.121.250
 - [Using network namespaces and a virtual switch to isolate servers](https://ops.tips/blog/using-network-namespaces-and-bridge-to-isolate-servers/)
 - [Network Namespace , connect to host and with a VM](https://github.com/sjha3/Linux-Networking/wiki/5.-Network-Namespace-,-connect-to-host-and-with-a-VM)
 - [Using network namespaces with veth to NAT guests with overlapping IPs](https://blog.christophersmart.com/2020/03/15/using-network-namespaces-with-veth-to-nat-guests-with-overlapping-ips/)
+- [DD-WRT: DNSMasq expand-hosts not working](https://superuser.com/questions/111766/dd-wrt-dnsmasq-expand-hosts-not-working)
+- [dnsmasq](https://wiki.archlinux.org/index.php/dnsmasq#PXE_server)
+- [PXELINUX](https://wiki.syslinux.org/wiki/index.php?title=PXELINUX)
