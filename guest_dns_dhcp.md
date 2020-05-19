@@ -106,6 +106,7 @@ $ sudo nmcli con mod "$ISOLATED_DHCP_CONN" ipv4.address "10.120.121.250/24"
 $ sudo nmcli con mod "$ISOLATED_DHCP_CONN" ipv4.dns-search "example.com"
 $ sudo nmcli con mod "$ISOLATED_DHCP_CONN" connection.autoconnect yes
 $ sudo nmcli con mod "$ISOLATED_DHCP_CONN" ipv4.method manual
+$ sudo nmcli con up "$ISOLATED_DHCP_CONN"
 ```
 Disable systemd-resolved so it does not interfere with dnsmasq 
 ```bash
@@ -161,7 +162,7 @@ dhcp-option=28,10.120.121.255
 # this is for dhcp server which provide other services. MAC is for veth1
 dhcp-mac=set:services,52:54:00:4b:73:5f
 #this is for pxe client (VM2) machine
-dhcp-mac=set:pxeclient,52:54:00:82:ba:38
+dhcp-mac=set:pxeclient,52:54:00:82:ba:39
 
 # Match the tag with a specific hostname
 # dhcp option 12 is the hostname to hand out to clients
@@ -170,11 +171,13 @@ dhcp-option=tag:services,12,services.example.com
 
 # hand out IP addresses
 dhcp-host=52:54:00:4b:73:5f,10.120.121.250
-dhcp-host=52:54:00:82:ba:38,10.120.121.99
+dhcp-host=52:54:00:82:ba:39,10.120.121.99
 
 # Add A, AAAA and PTR records to the DNS
-#host-record=52:54:00:66:16:2a,10.120.121.250,services.lab-cluster.okd4.lab
-#host-record=52:54:00:82:ba:38,10.120.121.99,iptables.lab-cluster.okd4.lab
+# both dhcp and services will be resolved to 10.120.121.250
+host-record=dhcp,dhcp.example.com,services,services.example.com,10.120.121.250
+#this is also resolved as client.example.com
+host-record=client,centos,10.120.121.99
 
 # PXE
 #PXELINUX is a Syslinux derivative, for booting 
@@ -197,16 +200,19 @@ tftp-root=/var/lib/tftpboot
 EOF
 ```
 ## Set up TFTP
-Since PXELINUX is a Syslinux derivative, which is a lightweight master boot record boot loaders for starting up IBM PC compatible computers with the Linux kernel over the PXE channel. We will use `syslinux` bootloader package for our pxelinux setup. Since our pxe root is at `/var/lib/tftpboot`, copy all syslinux boot files into this location.
+Since PXELINUX is a Syslinux derivative, which is a lightweight master boot record boot loaders for starting up IBM PC compatible computers with the Linux kernel over the PXE channel. We will use `syslinux` bootloader package for our pxelinux setup. Since our pxe root is at `/var/lib/tftpboot`, copy all syslinux boot files into this location.   
+We also need to install `tftp-server` package to provide tftp support. This package will create the tftp root at `/var/lib/tftpboot` and provide appropriate `selinux` configurations. I got the `permission denied` from a client trying to access tftp data when not using this package by default(read [here](https://unix.stackexchange.com/questions/31809/permission-denied-trying-to-get-a-file-using-tftp#comment43218_31809) for more info).
 ```bash
 $ sudo dnf install -y syslinux
 $ ls /usr/share/syslinux
 altmbr.bin    cpuidtest.c32  gfxboot.c32   ifplop.c32          ldlinux.c32   mboot.c32     prdhcp.c32      syslinux.com
 ...
-$ sudo mkdir -p /var/lib/tftpboot
+$ sudo dnf install -y tftp-server
 $ sudo cp -r /usr/share/syslinux/* /var/lib/tftpboot
+# run this in case there is permission denied issue
+$ sudo restorecon -Rv /var/lib/tftpboot
 ```
-The PXE Server maps the configuration boot file to a client machine from a group of specific files in <tftp_root>/pxelinux.cfg folder(read [pxelinux configuration](https://wiki.syslinux.org/wiki/index.php?title=PXELINUX#Configuration)). The order of the mapping search is client `UUID > MAC > IP address > default file`. In this example we will use a default file to boot our client.
+The PXE Server maps the configuration boot file to a client machine from a group of specific files in <tftp_root>/pxelinux.cfg folder(read [pxelinux configuration](https://wiki.syslinux.org/wiki/index.php?title=PXELINUX#Configuration)). The order of the mapping search is client `UUID > MAC > IP address > default file`. In this example we will use a default file to boot our client with CentOS 7 image.
 ```bash
 $ sudo mkdir -p /var/lib/tftpboot/pxelinux.cfg
 $ cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux.cfg/default
@@ -226,9 +232,64 @@ label 2
 menu label ^4) Boot from local drive
 EOF
 ```
+Have the CenOS iso image ready. From the `default` configuration file above we will need to have `centos7` directory to be created at the tftp root, with the 2 files `vmlinuz` and `initrd.img` copied over from the centos7 image.
+```bash
+$ ls
+centos-dvd.iso
+$ sudo mount -o loop centos-dvd.iso /mnt
+$ sudo mkdir -p /var/lib/tftpboot/centos7
+$ sudo cp /mnt/images/pxeboot/vmlinuz /mnt/images/pxeboot/initrd.img  /var/lib/tftpboot/centos7
+```
+Also notice we will use FTP as a method to host CentOS image files to be provided to the PXE client. PXE can support other methods like HTTP/HTTPS or NFS.   
+Install `vsftpd` package and copy all the centos image files to the ftp public folder. We also need to enable anonymous access to this folder.
+```bash
+$ sudo dnf install -y vsftpd
+$ sudo cp -r /mnt/*  /var/ftp/pub/ 
+$ sudo chmod -R 755 /var/ftp/pub
+$ sudo sed -i 's/anonymous_enable=NO/anonymous_enable=YES/g' /etc/vsftpd/vsftpd.conf
+```
+Enable and start `dnsmasq` and `vsftpd`
+```bash
+$ sudo systemctl enable dnsmasq
+$ sudo systemctl start dnsmasq
+$ sudo systemctl enable vsftpd
+$ sudo systemctl start vsftpd
+```
+We can test connection to ftp server using `ftp` package. Log in as `ftp` user with `blank` password for anonymous access. Also make sure the server `/pub` location has all the Centos installations files.
+```bash
+$ sudo dnf install -y ftp
+$ ftp -p services.example.com
+Connected to services.example.com (10.120.121.250).
+220 (vsFTPd 3.0.3)
+Name (services.example.com:mpham): ftp
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> ls pub
+227 Entering Passive Mode (10,120,121,250,244,22).
+150 Here comes the directory listing.
+-rwxr-xr-x    1 0        0              14 May 19 17:26 CentOS_BuildTag
+...
+```
+We are ready to create a TFTP client
+## Set up TFTP client
+The dnsmasq configuration file specifies `52:54:00:82:ba:38` as MAC, `10.120.121.99` as IP, and `client.example.com` and `centos.example.com`.   
+
+We will use `virsh` command to create a new empty VM that uses PXE boot and `52:54:00:82:ba:39` as NIC and connect it to the `isolated-dhcp` network.
+```bash
+$ sudo qemu-img create -f qcow2 -o preallocation=metadata /var/lib/libvirt/images/centos7.0.qcow2 10G
+$ virt-install --connect qemu:///system --name centos7_client --network network=isolated-dhcp --mac=52:54:00:82:ba:39 --pxe --ram=2048 --vcpus=2 --check-cpu --os-type=linux --os-variant=generic --disk path=/var/lib/libvirt/images/centos7.0.qcow2
+```
+The `virt-install` will run a `virt-viewer` session for the installation in graphic mode.   
+**Note: From [fedora doc](https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/Virtualization_Deployment_and_Administration_Guide/sect-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Guest_Installation-Installing_guests_with_PXE.html):
+```
+Note that the command above cannot be executed in a text-only environment. A fully-virtualized (--hvm) guest can only be installed in a text-only environment if the --location and --extra-args "console=console_type" are provided instead of the --graphics spice parameter.
+```
 ## Set up NAT gateway for internet access
 
-## Set up TFTP client
+
 
 ## References
 - [VirtualNetworking](https://wiki.libvirt.org/page/VirtualNetworking)
@@ -241,3 +302,6 @@ EOF
 - [DD-WRT: DNSMasq expand-hosts not working](https://superuser.com/questions/111766/dd-wrt-dnsmasq-expand-hosts-not-working)
 - [dnsmasq](https://wiki.archlinux.org/index.php/dnsmasq#PXE_server)
 - [PXELINUX](https://wiki.syslinux.org/wiki/index.php?title=PXELINUX)
+- [How To Set Up vsftpd for Anonymous Downloads on Ubuntu 16.04](https://www.digitalocean.com/community/tutorials/how-to-set-up-vsftpd-for-anonymous-downloads-on-ubuntu-16-04)
+- [“Permission denied” trying to get a file using TFTP](https://unix.stackexchange.com/questions/31809/permission-denied-trying-to-get-a-file-using-tftp#comment43218_31809)
+- [Installing guest virtual machines with PXE](https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/Virtualization_Deployment_and_Administration_Guide/sect-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Guest_Installation-Installing_guests_with_PXE.html)
