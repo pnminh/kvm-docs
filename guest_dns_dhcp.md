@@ -395,6 +395,11 @@ Create a new PXE client that will run Fedora Core OS
 ```bash
 $ sudo qemu-img create -f qcow2 -o preallocation=metadata /var/lib/libvirt/images/fedcoreos.qcow2 10G
 $ virt-install --connect qemu:///system --name fedora-coreos --network network=isolated-dhcp --mac=52:54:00:82:ba:40 --pxe --ram=4000 --vcpus=2 --check-cpu --os-type=linux --os-variant=generic --disk path=/var/lib/libvirt/images/fedcoreos.qcow2
+$ ssh core@10.120.121.100
+[core@fedora-coreos ~]$ ping fedora-coreos
+PING fedora-coreos.example.com (10.120.121.100) 56(84) bytes of data.
+64 bytes from fedora-coreos (10.120.121.100): icmp_seq=1 ttl=64 time=0.051 ms
+...
 ```
 
 
