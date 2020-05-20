@@ -1,0 +1,7 @@
+DEFAULT pxeboot
+TIMEOUT 20
+PROMPT 0
+LABEL pxeboot
+    KERNEL fedcoreos/fedora-coreos-kernel
+    APPEND ip=dhcp rd.neednet=1 initrd=fedcoreos/fedora-coreos-initramfs.img console=tty0 console=ttyS0 coreos.inst.install_dev=/dev/sda coreos.inst.ignition_url=http://services.example.com:8080/fedora-coreos/config.ign coreos.inst.image_url=http://services.example.com:8080/fedora-coreos/fedora-coreos-metal.raw.xz
+IPAPPEND 2

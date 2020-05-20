@@ -192,7 +192,7 @@ dhcp-boot=pxelinux.0
 #PXE client will see the prompt 
 pxe-prompt="Press F8 for menu.", 60
 #use pxelinux for x86PC platform
-pxe-service=x86PC, "Install CentOS 7 from network server 10.120.121.250", pxelinux
+pxe-service=x86PC, "PXEBoot Server", pxelinux
 #enable tftp server with dnsmasq
 enable-tftp
 #the location for all netbooting files.
@@ -275,9 +275,9 @@ ftp> ls pub
 ```
 We are ready to create a TFTP client
 ## Set up TFTP client
-The dnsmasq configuration file specifies `52:54:00:82:ba:38` as MAC, `10.120.121.99` as IP, and `client.example.com` and `centos.example.com`.   
+The dnsmasq configuration file specifies `52:54:00:82:ba:39` as MAC, `10.120.121.99` as IP, and `client.example.com` and `centos.example.com`.   
 
-We will use `virsh` command to create a new empty VM that uses PXE boot and `52:54:00:82:ba:39` as NIC and connect it to the `isolated-dhcp` network.
+We will use `virsh` command to create a new empty VM that uses PXE boot and `52:54:00:82:ba:39` as NIC and connect it to the `isolated-dhcp` network. This can be run on the host machine.
 ```bash
 $ sudo qemu-img create -f qcow2 -o preallocation=metadata /var/lib/libvirt/images/centos7.0.qcow2 10G
 $ virt-install --connect qemu:///system --name centos7_client --network network=isolated-dhcp --mac=52:54:00:82:ba:39 --pxe --ram=2048 --vcpus=2 --check-cpu --os-type=linux --os-variant=generic --disk path=/var/lib/libvirt/images/centos7.0.qcow2
@@ -326,6 +326,76 @@ PING google.com (172.217.4.78) 56(84) bytes of data.
 ...
 ```
 ## Install Fedora CoreOS using PXE and HTTP
+In this example, we will create a [Fedora CoreOS](https://getfedora.org/coreos/download?tab=metal_virtualized&stream=stable) client with `52:54:00:82:ba:40` as MAC, `10.120.121.100` as IP, and `fedora-coreos.example.com` as hostname.   
+
+On VM1, make sure we have the kernel and initramfs image ready.
+```bash
+$ ls
+fedora-coreos-31.20200420.3.0-live-initramfs.x86_64.img  fedora-coreos-31.20200420.3.0-live-kernel-x86_64
+$ sudo mkdir -p /var/lib/tftpboot/fedcoreos
+$ sudo mv fedora-coreos-31.20200420.3.0-live-* /var/lib/tftpboot/fedora_coreos/
+$ sudo ln -s /var/lib/tftpboot/fedcoreos/fedora-coreos-31.20200420.3.0-live-kernel-x86_64 /var/lib/tftpboot/fedcoreos/fedora-coreos-kernel
+$ sudo ln -s /var/lib/tftpboot/fedcoreos/fedora-coreos-31.20200420.3.0-live-initramfs.x86_64.img /var/lib/tftpboot/fedcoreos/fedora-coreos-initramfs.img
+# need to restore the tftpboot for selinux to allow new files
+$ sudo restorecon -r /var/lib/tftpboot/
+```
+Instead of using the PXE `default` configuration file for the client VM, we will use the client MAC address for configuration file mapping. Note that the file name should be `01-<mac seperated with '-'>`
+```bash
+$ cat <<EOF | sudo tee /var/lib/tftpboot/pxelinux.cfg/01-52-54-00-82-ba-40
+DEFAULT pxeboot
+TIMEOUT 20
+PROMPT 0
+LABEL pxeboot
+    KERNEL fedcoreos/fedora-coreos-kernel
+    APPEND ip=dhcp rd.neednet=1 initrd=fedcoreos/fedora-coreos-initramfs.img console=tty0 console=ttyS0 coreos.inst.install_dev=/dev/sda coreos.inst.stream=stable coreos.inst.ignition_url=http://services.example.com:8080/fedora-coreos/config.ign
+IPAPPEND 2
+EOF
+$ ls /var/lib/tftpboot/pxelinux.cfg/
+01-52-54-00-82-ba-40  default
+```
+We also need to create the ignition file `config.ign`
+```bash
+$ cat <<EOF > config.fcc
+variant: fcos
+version: 1.0.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-rsa AAA...
+EOF
+$ sudo dnf install -y fcct
+$ fcct --strict config.fcc --output config.ign
+$ sudo dnf install -y httpd
+$ sudo sed -i s/'Listen 80'/'Listen 8080'/g /etc/httpd/conf/httpd.conf
+$ sudo mkdir -p /var/www/html/fedora-coreos
+# make sure we have the fedora raw file
+$ ls
+config.ign  fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz.sig
+$ sudo mv config.ign fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz.sig /var/www/html/fedora-coreos
+$ sudo ln -s /var/www/html/fedora-coreos/fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz /var/www/html/fedora-coreos/fedora-coreos-metal.raw.xz
+$ sudo ln -s /var/www/html/fedora-coreos/fedora-coreos-31.20200420.3.0-metal.x86_64.raw.xz.sig fedora-coreos-metal.raw.xz.sig
+
+$ sudo chown -R apache. /var/www/html/*
+$ sudo restorecon -r /var/www/html
+# test retrieving files
+$ curl services.example.com:8080/fedora-coreos/config.ign
+```
+Set up dnsmasq
+```bash
+$ cat <<EOF |sudo tee --append /etc/dnsmasq.d/isolated-dhcp.conf
+dhcp-mac=set:fedoracoreos,52:54:00:82:ba:40
+dhcp-host=52:54:00:82:ba:40,10.120.121.100
+dhcp-option=tag:fedoracoreos,12,fedora-coreos.example.com
+host-record=fedora-coreos,fedora-coreos.example.com,10.120.121.100
+EOF
+$ sudo systemctl restart dnsmasq.service
+```
+Create a new PXE client that will run Fedora Core OS
+```bash
+$ sudo qemu-img create -f qcow2 -o preallocation=metadata /var/lib/libvirt/images/fedcoreos.qcow2 10G
+$ virt-install --connect qemu:///system --name fedora-coreos --network network=isolated-dhcp --mac=52:54:00:82:ba:40 --pxe --ram=4000 --vcpus=2 --check-cpu --os-type=linux --os-variant=generic --disk path=/var/lib/libvirt/images/fedcoreos.qcow2
+```
 
 
 ## References
@@ -343,3 +413,5 @@ PING google.com (172.217.4.78) 56(84) bytes of data.
 - [“Permission denied” trying to get a file using TFTP](https://unix.stackexchange.com/questions/31809/permission-denied-trying-to-get-a-file-using-tftp#comment43218_31809)
 - [Installing guest virtual machines with PXE](https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/Virtualization_Deployment_and_Administration_Guide/sect-Virtualization_Host_Configuration_and_Guest_Installation_Guide-Guest_Installation-Installing_guests_with_PXE.html)
 - [iptables forwarding between two interface](https://serverfault.com/questions/431593/iptables-forwarding-between-two-interface)
+- [Fedora CoreOS PXE Installation](https://docs.fedoraproject.org/en-US/fedora-coreos/bare-metal/#_installing_from_pxe)
+- [Fedora CoreOS - Producing an Ignition File](https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/)
